@@ -16,6 +16,7 @@ from job_agent.application.ports.repositories import (
     ResumeRecord,
     ResumeVersionRepository,
 )
+from job_agent.application.ports.unit_of_work import ProfileUnitOfWork
 
 __all__ = [
     "ApplicationRepository",
@@ -27,6 +28,7 @@ __all__ = [
     "JobRepository",
     "MatchRepository",
     "Page",
+    "ProfileUnitOfWork",
     "RepositoryError",
     "ResumeEvidenceRepository",
     "ResumeRepository",

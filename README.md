@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001 工程骨架、T002 领域 Schema、T003 数据库持久化基础、T004 Repository 与事务层，以及 T005 Profile Service；岗位/投递业务工作流和业务页面仍在后续任务中实现。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001 工程骨架、T002 领域 Schema、T003 数据库持久化基础、T004 Repository 与事务层、T005 Profile Service，以及 T006 Job/Application Service；岗位搜索、自动投递和业务页面仍在后续任务中实现。
 
 ## 环境要求
 
@@ -41,7 +41,7 @@ job-agent
 python -m pytest -q
 ```
 
-测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository，以及 T005 Profile 创建/编辑、结构化导入、Evidence 验证、VERIFIED 查询和原子回滚。
+测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository、T005 Profile Service，以及 T006 岗位去重、待投池幂等创建、状态机、事件 Timeline 和事务回滚。
 
 ## 数据库
 
@@ -76,4 +76,14 @@ Repository 通过显式接收共享 `Session` 工作，不自行 `commit`；由�
 
 Service 不依赖 SQLAlchemy、ORM 或 Session，也不自行提交事务；SQLAlchemy Unit of Work 复用现有 `session_scope` 管理提交和回滚。
 
-未实现：Job/Application Service、岗位搜索、LLM Agent、LangGraph 业务图、Playwright 自动化和 Streamlit 业务页面。
+## Job 与 Application Service
+
+`JobService` 接收已经结构化且通过 Pydantic 校验的 `JobPosting`，提供手动保存、按 ID 查询和分页查询。保存操作复用 `JobRepository.upsert()`，以调用方提供的 `fingerprint` 去重；更新现有岗位时保留数据库中的 `id`、`fingerprint` 和 `discovered_at`。本阶段不生成 fingerprint，也不解析或搜索 JD。
+
+`ApplicationService` 使用“创建 `ApplicationRecord` 即加入待投池”的语义。创建前校验 Candidate、Job，以及可选 ResumeVersion 的存在性和归属关系；初始状态固定为 `SHORTLISTED`，并在同一事务追加 `APPLICATION_CREATED` 事件。同一 `candidate_id + job_id` 只允许一条记录，完全相同的重复请求返回已有记录，不重复生成事件。
+
+普通状态接口使用独立、确定性的 Python 规则：正常状态可向标准链后方推进或进入 `REJECTED`、`WITHDRAWN`、`CLOSED`，禁止回退，终止状态不能自动恢复；同状态请求没有写入副作用。每次真实变化都在同一事务追加 `STATUS_CHANGED` 事件。第一次进入 `SUBMITTED` 或更靠后的正常状态时设置 `submitted_at`，随后保持不变；所有服务时间由可注入 Clock 生成、统一为 UTC aware，并保证 `last_updated_at` 单调递增。
+
+应用服务只依赖 Repository Protocol 和 `JobApplicationUnitOfWork`，不导入 SQLAlchemy、Session 或 ORM，也不自行提交或回滚。查询返回领域对象或 `Page[T]`；Application Timeline 按 `occurred_at`、`id` 稳定升序返回。
+
+未实现：T007 Streamlit 基础 UI、岗位搜索、LLM Agent、LangGraph 业务图、Playwright 自动化和自动提交。

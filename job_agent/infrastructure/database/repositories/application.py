@@ -47,6 +47,42 @@ class SqlAlchemyApplicationRepository(
     def _ordering(self):
         return (ApplicationORM.last_updated_at.asc(), ApplicationORM.id.asc())
 
+    def get_by_candidate_and_job(
+        self, candidate_id: str, job_id: str
+    ) -> ApplicationRecord | None:
+        orm = self._scalar(
+            select(ApplicationORM).where(
+                ApplicationORM.candidate_id == candidate_id,
+                ApplicationORM.job_id == job_id,
+            ),
+            action="按候选人和岗位查询",
+        )
+        return None if orm is None else self._to_domain(orm)
+
+    def list_by_candidate(
+        self, candidate_id: str, *, limit: int = 50, offset: int = 0
+    ) -> Page[ApplicationRecord]:
+        """在数据库分页前按候选人过滤投递记录。"""
+
+        validate_pagination(limit, offset)
+        try:
+            total = self._session.scalar(
+                select(func.count())
+                .select_from(ApplicationORM)
+                .where(ApplicationORM.candidate_id == candidate_id)
+            ) or 0
+            statement = (
+                select(ApplicationORM)
+                .where(ApplicationORM.candidate_id == candidate_id)
+                .order_by(*self._ordering())
+                .limit(limit)
+                .offset(offset)
+            )
+            items = [self._to_domain(item) for item in self._session.scalars(statement)]
+            return Page(items=items, total=total, limit=limit, offset=offset)
+        except SQLAlchemyError as exc:
+            raise RepositoryError("按候选人分页查询投递记录失败") from exc
+
     def upsert(self, entity: ApplicationRecord) -> ApplicationRecord:
         orm = self._scalar(
             select(ApplicationORM).where(

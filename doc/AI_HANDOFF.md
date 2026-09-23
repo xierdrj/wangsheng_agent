@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T005
-- 已完成任务：T001、T002、T003、T004、T005
-- 下一任务：T006
+- 当前稳定任务：T006
+- 已完成任务：T001、T002、T003、T004、T005、T006
+- 下一任务：T007
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -91,6 +91,24 @@
 - Service 不导入 SQLAlchemy、Session 或 ORM，不调用 commit
 - 未修改 Schema 或 migration
 
+### T006：Job 与 Application Service
+
+已完成：
+
+- `JobService` 手动保存、查询和分页查询结构化岗位
+- 复用 `JobRepository.upsert()` 按 fingerprint 去重，并保留已有 `id`、`fingerprint`、`discovered_at`
+- 以创建 `ApplicationRecord` 表示加入待投池，初始状态固定为 `SHORTLISTED`
+- 同事务追加 `APPLICATION_CREATED`，同一 candidate/job 唯一，完全相同请求保持幂等
+- Candidate、Job 及可选 ResumeVersion 的存在性与归属校验
+- `ApplicationService` 按 ID 查询、候选人维度分页查询和 Event Timeline 查询
+- 独立纯 Python 状态规则：正常状态向后推进或进入终止状态，拒绝回退和终止状态自动恢复
+- 同状态请求不更新时间、不追加 Event；真实变化追加 `STATUS_CHANGED`
+- 首次进入 `SUBMITTED` 或更后正常状态时设置 `submitted_at`，之后保持不变
+- 可注入 Clock 统一生成 UTC aware 时间，并保证 `last_updated_at` 单调增加
+- `JobApplicationUnitOfWork` 与 SQLAlchemy 适配器，共享 Candidate、Job、Application、ResumeVersion Repository 和同一事务
+- Application/Event 创建及状态/Event 更新具有原子性，Event 失败时整体回滚
+- 未修改 Schema 或 migration，未实现 T007
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -104,9 +122,12 @@
 
 ## 最近验证结果
 
-T005 完成时：
+T006 完成时：
 
-- 完整 pytest：48 passed
+- 完整 pytest：92 passed
+- T006 状态规则与 Job/Application Service 专项：44 passed
+- T006 Job/Application Service 集成测试：11 passed
+- T006 状态规则单元测试：33 passed
 - T005 Profile Service 集成测试：8 passed
 - T004 Repository 集成测试：10 passed
 - 数据库集成测试：10 passed
@@ -119,7 +140,7 @@ T005 完成时：
 
 ## 当前未实现
 
-- Job 与 Application Service
+- T007 Streamlit 基础 UI
 - 岗位搜索与匹配
 - LLM Agent
 - LangGraph 业务图
@@ -140,6 +161,8 @@ T005 完成时：
 8. ORM 使用 UTC naive datetime 存储于 SQLite，映射恢复为 UTC aware datetime；领域层不依赖 SQLAlchemy。
 9. T003 初始 revision 使用显式 `op.create_table`/`op.create_index`/`op.drop_table`，不导入 ORM metadata；迁移通过 `DATABASE_URL` 或 Alembic 命令配置读取数据库地址，不写入机器绝对路径。
 10. T005 文档称 EvidenceVerification 只有 UNVERIFIED/VERIFIED，但 T002 公开枚举和领域文档还包含 REJECTED；当前保留 T002 契约，REJECTED 不进入正式查询，也不能被 Profile Service 自动验证。
+11. T006 不提供终止状态恢复接口；`REJECTED`、`WITHDRAWN`、`CLOSED` 不能通过普通状态接口恢复，后续若需要必须增加带人工来源和原因的独立接口。
+12. T006 依赖调用方提供稳定、非空的 Job fingerprint，不包含自动 fingerprint、JD 解析或岗位搜索。
 
 ## T003 新增公共接口
 
@@ -167,9 +190,24 @@ T005 完成时：
 - `ResumeEvidenceRepository.list_by_candidate`
 - `ResumeEvidenceRepository.list_verified_by_candidate`
 
+## T006 新增公共接口
+
+- `job_agent.application.services.JobService`
+- `job_agent.application.services.ApplicationService`
+- `job_agent.application.services.ApplicationConflictError`
+- `job_agent.application.services.InvalidApplicationTransitionError`
+- `job_agent.application.contracts.AddToApplicationPoolRequest`
+- `job_agent.application.contracts.ApplicationTransitionRequest`
+- `job_agent.application.rules.can_transition`
+- `job_agent.application.rules.is_submitted_or_later`
+- `job_agent.application.ports.JobApplicationUnitOfWork`
+- `job_agent.infrastructure.database.SqlAlchemyJobApplicationUnitOfWork`
+- `ApplicationRepository.get_by_candidate_and_job`
+- `ApplicationRepository.list_by_candidate`
+
 ## 下一任务
 
-下一任务是 T006。T005 只实现 Profile 和 Evidence 业务边界，未实现 Job/Application Service、LLM、LangGraph、Playwright、Streamlit 或其他后续功能。
+下一任务是 T007 Streamlit 基础 UI。T006 只实现手动结构化岗位保存、待投池、Application 状态与事件业务边界，未实现 UI、自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright 或自动提交。
 
 ## 每次任务完成后的更新要求
 

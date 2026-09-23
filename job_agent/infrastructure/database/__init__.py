@@ -9,11 +9,15 @@ from job_agent.infrastructure.database.engine import (
 from job_agent.infrastructure.database.base import Base
 from job_agent.infrastructure.database.init import initialize_database
 from job_agent.infrastructure.database.session import create_session_factory, session_scope
-from job_agent.infrastructure.database.unit_of_work import SqlAlchemyProfileUnitOfWork
+from job_agent.infrastructure.database.unit_of_work import (
+    SqlAlchemyJobApplicationUnitOfWork,
+    SqlAlchemyProfileUnitOfWork,
+)
 
 __all__ = [
     "Base",
     "DatabaseConfigurationError",
+    "SqlAlchemyJobApplicationUnitOfWork",
     "SqlAlchemyProfileUnitOfWork",
     "create_engine_from_settings",
     "create_engine_from_url",

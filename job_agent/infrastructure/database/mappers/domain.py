@@ -8,6 +8,7 @@ from typing import Any, TypeVar
 from pydantic import BaseModel, ValidationError
 
 from job_agent.domain.enums import ApplicationStatus, EvidenceVerification
+from job_agent.application.contracts import ResumeRecord
 from job_agent.domain.schemas import (
     ApplicationAnswer,
     ApplicationEvent,
@@ -26,6 +27,7 @@ from job_agent.infrastructure.database.models import (
     JobMatchORM,
     JobORM,
     ResumeEvidenceORM,
+    ResumeORM,
     ResumeVersionORM,
 )
 
@@ -118,6 +120,30 @@ def evidence_to_domain(orm: ResumeEvidenceORM) -> ResumeEvidence:
             "verification": _enum_value(orm.verification),
             "created_at": _from_db_datetime(orm.created_at),
             "updated_at": _from_db_datetime(orm.updated_at),
+        },
+    )
+
+
+def resume_to_orm(domain: ResumeRecord, orm: ResumeORM | None = None) -> ResumeORM:
+    target = orm or ResumeORM(id=domain.id)
+    target.candidate_id = domain.candidate_id
+    target.name = domain.name
+    target.source_file_path = domain.source_file_path
+    target.content_hash = domain.content_hash
+    target.parsed_content_json = domain.parsed_content
+    return target
+
+
+def resume_to_domain(orm: ResumeORM) -> ResumeRecord:
+    return _validate(
+        ResumeRecord,
+        {
+            "id": orm.id,
+            "candidate_id": orm.candidate_id,
+            "name": orm.name,
+            "source_file_path": orm.source_file_path,
+            "content_hash": orm.content_hash,
+            "parsed_content": orm.parsed_content_json,
         },
     )
 

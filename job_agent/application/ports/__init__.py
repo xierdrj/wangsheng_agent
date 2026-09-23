@@ -16,7 +16,10 @@ from job_agent.application.ports.repositories import (
     ResumeRecord,
     ResumeVersionRepository,
 )
-from job_agent.application.ports.unit_of_work import ProfileUnitOfWork
+from job_agent.application.ports.unit_of_work import (
+    JobApplicationUnitOfWork,
+    ProfileUnitOfWork,
+)
 
 __all__ = [
     "ApplicationRepository",
@@ -25,6 +28,7 @@ __all__ = [
     "EntityNotFoundError",
     "InvalidPaginationError",
     "ImmutableFieldError",
+    "JobApplicationUnitOfWork",
     "JobRepository",
     "MatchRepository",
     "Page",

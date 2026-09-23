@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T002
-- 已完成任务：T001、T002
-- 下一任务：T003
+- 当前稳定任务：T003
+- 已完成任务：T001、T002、T003
+- 下一任务：T004
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -46,6 +46,20 @@
 - ApplicationEvent
 - FormField
 
+### T003：数据库与 ORM 持久化基础
+
+已完成：
+
+- SQLAlchemy 2.x Engine 和 Session 工厂
+- SQLite 外键约束启用
+- 显式数据库初始化入口
+- Candidate、Resume、ResumeEvidence、Job、JobMatch、ResumeVersion、Application、ApplicationAnswer、ApplicationEvent ORM
+- 领域 Schema 与 ORM 的显式映射
+- UTC datetime 和 StrEnum 持久化策略
+- 使用显式 Alembic DDL 的不可变初始迁移
+- 迁移与 ORM metadata 结构一致性及升级/降级/再升级验证
+- 临时 SQLite 集成测试
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -59,20 +73,19 @@
 
 ## 最近验证结果
 
-T002 完成时：
+T003 完成时：
 
-- 完整 pytest：19 passed
-- 领域模型测试：16 passed
+- 完整 pytest：29 passed
+- 数据库集成测试：10 passed
+- T002 领域模型测试：16 passed
 - T001 smoke test：3 passed
 - compileall：通过
 - python -m job_agent：通过
+- Alembic upgrade/downgrade：通过
 - git diff --check：通过
 
 ## 当前未实现
 
-- 数据库连接和会话管理
-- SQLAlchemy ORM
-- 数据库迁移
 - Repository
 - 业务服务
 - 岗位搜索与匹配
@@ -92,17 +105,25 @@ T002 完成时：
 6. 不得提前执行真实职位投递。
 7. ruff 和 mypy 当前尚未配置。
 
+8. ORM 使用 UTC naive datetime 存储于 SQLite，映射恢复为 UTC aware datetime；领域层不依赖 SQLAlchemy。
+9. T003 初始 revision 使用显式 `op.create_table`/`op.create_index`/`op.drop_table`，不导入 ORM metadata；迁移通过 `DATABASE_URL` 或 Alembic 命令配置读取数据库地址，不写入机器绝对路径。
+
+## T003 新增公共接口
+
+- `create_engine_from_url`
+- `create_engine_from_settings`
+- `create_session_factory`
+- `session_scope`
+- `initialize_database`
+- `job_agent.infrastructure.database.mappers` 中的显式领域/ORM 转换函数
+
 ## 下一任务
 
 下一任务是：
 
-T003：数据库与 ORM 持久化基础
+T004：Repository 层
 
-T003 具体范围和验收要求见：
-
-doc/tasks/T003.md
-
-T003 不实现 Repository CRUD，Repository 放在 T004 或后续任务。
+T004 具体范围和验收要求见对应任务文档。T003 未实现 Repository CRUD。
 
 ## 每次任务完成后的更新要求
 

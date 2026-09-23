@@ -18,6 +18,8 @@ from job_agent.infrastructure.database.mappers.domain import (
     match_to_orm,
     resume_version_to_domain,
     resume_version_to_orm,
+    resume_to_domain,
+    resume_to_orm,
 )
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "match_to_orm",
     "resume_version_to_domain",
     "resume_version_to_orm",
+    "resume_to_domain",
+    "resume_to_orm",
 ]

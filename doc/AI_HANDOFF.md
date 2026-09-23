@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T003
-- 已完成任务：T001、T002、T003
-- 下一任务：T004
+- 当前稳定任务：T004
+- 已完成任务：T001、T002、T003、T004
+- 下一任务：T005
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -60,6 +60,22 @@
 - 迁移与 ORM metadata 结构一致性及升级/降级/再升级验证
 - 临时 SQLite 集成测试
 
+### T004：Repository 与事务层
+
+已完成：
+
+- 与 SQLAlchemy 实现分离的 Repository Protocol 和分页 `Page[T]`
+- Candidate、Resume、ResumeEvidence、Job、Match、ResumeVersion、Application Repository
+- Application 聚合内的 Answer/Event 新增和分页查询
+- 一致的 add/get/list/update/delete 行为；查询不到返回 `None`，删除不存在返回 `False`，更新不存在抛 `EntityNotFoundError`
+- Job、Resume、Match、Application 按明确业务唯一键执行 upsert，并保留数据库 id 与不可变键
+- 分页参数校验（`limit` 1～100、`offset >= 0`）与时间/id 稳定排序
+- Repository 只 flush，不 commit；共享 Session 的外层事务负责提交和回滚
+- SQLAlchemy 完整性和持久化异常转换为项目级异常并保留异常链
+- 使用 T003 Mapper；未修改 Schema、数据库表或 `0001_initial_persistence.py`
+- 临时 SQLite 集成测试覆盖 CRUD、upsert、分页、异常转换和跨 Repository 回滚
+- Windows 启动入口显式使用 UTF-8 stdout，启动文本有子进程字节级回归测试
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -73,9 +89,10 @@
 
 ## 最近验证结果
 
-T003 完成时：
+T004 完成时：
 
-- 完整 pytest：29 passed
+- 完整 pytest：40 passed
+- T004 Repository 集成测试：10 passed
 - 数据库集成测试：10 passed
 - T002 领域模型测试：16 passed
 - T001 smoke test：3 passed
@@ -86,7 +103,6 @@ T003 完成时：
 
 ## 当前未实现
 
-- Repository
 - 业务服务
 - 岗位搜索与匹配
 - LLM Agent
@@ -117,13 +133,15 @@ T003 完成时：
 - `initialize_database`
 - `job_agent.infrastructure.database.mappers` 中的显式领域/ORM 转换函数
 
+## T004 新增公共接口
+
+- `job_agent.application.ports.repositories` 中的 Repository Protocol、`Page` 和项目级异常
+- `job_agent.infrastructure.database.repositories` 中的 SQLAlchemy Repository 实现
+- `job_agent.application.contracts.ResumeRecord`：针对 T002 尚未定义业务 Schema 的原始简历持久化 DTO；`ports` 保留兼容导出
+
 ## 下一任务
 
-下一任务是：
-
-T004：Repository 层
-
-T004 具体范围和验收要求见对应任务文档。T003 未实现 Repository CRUD。
+下一任务是 T005。T004 具体实现和验收记录见 `doc/tasks/T004.md`；本轮未实现 T005 或任何后续业务功能。
 
 ## 每次任务完成后的更新要求
 

@@ -1,0 +1,41 @@
+"""领域 Schema 与 ORM 的显式映射。"""
+
+from job_agent.infrastructure.database.mappers.domain import (
+    application_answer_to_domain,
+    application_answer_to_orm,
+    MappingError,
+    application_event_to_domain,
+    application_event_to_orm,
+    application_to_domain,
+    application_to_orm,
+    candidate_to_domain,
+    candidate_to_orm,
+    evidence_to_domain,
+    evidence_to_orm,
+    job_to_domain,
+    job_to_orm,
+    match_to_domain,
+    match_to_orm,
+    resume_version_to_domain,
+    resume_version_to_orm,
+)
+
+__all__ = [
+    "application_answer_to_domain",
+    "application_answer_to_orm",
+    "MappingError",
+    "application_event_to_domain",
+    "application_event_to_orm",
+    "application_to_domain",
+    "application_to_orm",
+    "candidate_to_domain",
+    "candidate_to_orm",
+    "evidence_to_domain",
+    "evidence_to_orm",
+    "job_to_domain",
+    "job_to_orm",
+    "match_to_domain",
+    "match_to_orm",
+    "resume_version_to_domain",
+    "resume_version_to_orm",
+]

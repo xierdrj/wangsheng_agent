@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001 工程骨架、T002 领域 Schema、T003 数据库持久化基础和 T004 Repository 与事务层；业务工作流和业务页面仍在后续任务中实现。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001 工程骨架、T002 领域 Schema、T003 数据库持久化基础、T004 Repository 与事务层，以及 T005 Profile Service；岗位/投递业务工作流和业务页面仍在后续任务中实现。
 
 ## 环境要求
 
@@ -41,7 +41,7 @@ job-agent
 python -m pytest -q
 ```
 
-测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移，以及 T004 Repository CRUD、upsert、分页、异常转换和跨 Repository 事务。
+测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository，以及 T005 Profile 创建/编辑、结构化导入、Evidence 验证、VERIFIED 查询和原子回滚。
 
 ## 数据库
 
@@ -68,4 +68,12 @@ alembic downgrade base
 
 Repository 通过显式接收共享 `Session` 工作，不自行 `commit`；由外层 `session_scope` 统一提交或回滚。接口返回领域模型和 `Page[T]`，SQLAlchemy 异常会转换为项目级 Repository 异常并保留异常链。支持的业务唯一键 upsert 为：Job `fingerprint`、Resume `candidate_id + content_hash`、Match `candidate_id + job_id`、Application `candidate_id + job_id`。分页默认按时间字段和 `id` 升序稳定排序，`limit` 范围为 1～100。
 
-未实现：业务 Service、岗位搜索、LLM Agent、LangGraph 业务图、Playwright 自动化和 Streamlit 业务页面。
+## Profile Service
+
+`ProfileService` 通过 Unit of Work 抽象创建、查询和编辑 Candidate Profile，也可以原子导入已经结构化的 Profile 与 ResumeEvidence。它不解析 PDF、Word、图片或自然语言简历。
+
+普通新增和导入的 Evidence 只能是 `UNVERIFIED`；只有显式验证操作可以转为 `VERIFIED`。审核查询可返回全部状态，正式查询则固定在数据库分页和计数之前筛选 `VERIFIED`，调用方不能关闭该限制。
+
+Service 不依赖 SQLAlchemy、ORM 或 Session，也不自行提交事务；SQLAlchemy Unit of Work 复用现有 `session_scope` 管理提交和回滚。
+
+未实现：Job/Application Service、岗位搜索、LLM Agent、LangGraph 业务图、Playwright 自动化和 Streamlit 业务页面。

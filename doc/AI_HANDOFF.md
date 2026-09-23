@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T004
-- 已完成任务：T001、T002、T003、T004
-- 下一任务：T005
+- 当前稳定任务：T005
+- 已完成任务：T001、T002、T003、T004、T005
+- 下一任务：T006
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -76,6 +76,21 @@
 - 临时 SQLite 集成测试覆盖 CRUD、upsert、分页、异常转换和跨 Repository 回滚
 - Windows 启动入口显式使用 UTF-8 stdout，启动文本有子进程字节级回归测试
 
+### T005：Profile Service
+
+已完成：
+
+- Profile 创建、按 ID 查询和完整编辑
+- 服务端 UTC Clock 规范化创建时间，并在编辑时保留 `created_at`、单调更新 `updated_at`
+- `ProfileImportRequest` / `ProfileImportResult` 结构化导入契约
+- Candidate 与多个 Evidence 的同事务原子导入
+- 普通新增和导入固定使用 `UNVERIFIED`，拒绝绕过显式验证流程
+- Evidence 显式验证和重复验证幂等行为
+- 审核查询返回全部状态；正式查询使用数据库级 VERIFIED 专用分页
+- application 层 `ProfileUnitOfWork` Protocol 与 infrastructure 层 SQLAlchemy 适配器
+- Service 不导入 SQLAlchemy、Session 或 ORM，不调用 commit
+- 未修改 Schema 或 migration
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -89,13 +104,14 @@
 
 ## 最近验证结果
 
-T004 完成时：
+T005 完成时：
 
-- 完整 pytest：40 passed
+- 完整 pytest：48 passed
+- T005 Profile Service 集成测试：8 passed
 - T004 Repository 集成测试：10 passed
 - 数据库集成测试：10 passed
 - T002 领域模型测试：16 passed
-- T001 smoke test：3 passed
+- T001 smoke test：4 passed
 - compileall：通过
 - python -m job_agent：通过
 - Alembic upgrade/downgrade：通过
@@ -103,7 +119,7 @@ T004 完成时：
 
 ## 当前未实现
 
-- 业务服务
+- Job 与 Application Service
 - 岗位搜索与匹配
 - LLM Agent
 - LangGraph 业务图
@@ -123,6 +139,7 @@ T004 完成时：
 
 8. ORM 使用 UTC naive datetime 存储于 SQLite，映射恢复为 UTC aware datetime；领域层不依赖 SQLAlchemy。
 9. T003 初始 revision 使用显式 `op.create_table`/`op.create_index`/`op.drop_table`，不导入 ORM metadata；迁移通过 `DATABASE_URL` 或 Alembic 命令配置读取数据库地址，不写入机器绝对路径。
+10. T005 文档称 EvidenceVerification 只有 UNVERIFIED/VERIFIED，但 T002 公开枚举和领域文档还包含 REJECTED；当前保留 T002 契约，REJECTED 不进入正式查询，也不能被 Profile Service 自动验证。
 
 ## T003 新增公共接口
 
@@ -139,9 +156,20 @@ T004 完成时：
 - `job_agent.infrastructure.database.repositories` 中的 SQLAlchemy Repository 实现
 - `job_agent.application.contracts.ResumeRecord`：针对 T002 尚未定义业务 Schema 的原始简历持久化 DTO；`ports` 保留兼容导出
 
+## T005 新增公共接口
+
+- `job_agent.application.services.ProfileService`
+- `job_agent.application.services.EvidenceStateError`
+- `job_agent.application.contracts.ProfileImportRequest`
+- `job_agent.application.contracts.ProfileImportResult`
+- `job_agent.application.ports.ProfileUnitOfWork`
+- `job_agent.infrastructure.database.SqlAlchemyProfileUnitOfWork`
+- `ResumeEvidenceRepository.list_by_candidate`
+- `ResumeEvidenceRepository.list_verified_by_candidate`
+
 ## 下一任务
 
-下一任务是 T005。T004 具体实现和验收记录见 `doc/tasks/T004.md`；本轮未实现 T005 或任何后续业务功能。
+下一任务是 T006。T005 只实现 Profile 和 Evidence 业务边界，未实现 Job/Application Service、LLM、LangGraph、Playwright、Streamlit 或其他后续功能。
 
 ## 每次任务完成后的更新要求
 

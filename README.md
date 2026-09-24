@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T007，包括领域与持久化基础、Profile/Job/Application Service，以及本地单用户 Streamlit 基础 UI；岗位搜索、匹配、自动化投递仍属于后续任务。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T008，包括领域与持久化基础、Profile/Job/Application Service、本地单用户 Streamlit 基础 UI，以及 V0.1 全流程集成验收；岗位搜索、匹配、自动化投递仍属于后续任务。
 
 ## 环境要求
 
@@ -59,7 +59,13 @@ python -m streamlit run job_agent/ui/app.py
 python -m pytest -q
 ```
 
-测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository、T005/T006 Service，以及 T007 ViewModel、Dashboard 聚合、刷新持久化和 Streamlit AppTest 关键交互。
+V0.1 端到端验收可单独运行：
+
+```powershell
+python -m pytest tests\e2e\test_v01_workflow.py -q
+```
+
+该测试从 pytest 临时目录中的空 SQLite 数据库开始，使用真实 Service、Repository、Unit of Work 和 Dashboard Reader，验收 Profile → Evidence → Job → Application → Event → Dashboard → ServiceBundle 重建读取的完整闭环。测试不会读取或修改 `data/job_agent.db`。完整回归还覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository、T005/T006 Service，以及 T007 ViewModel、Dashboard 聚合、刷新持久化和 Streamlit AppTest 关键交互。
 
 ## 数据库
 
@@ -116,4 +122,6 @@ UI 提供五个页面：
 
 页面只调用应用 Service；Session State 只保存导航、表单草稿、预览确认标记和操作状态，不保存 Profile 等业务对象。业务事实始终从 SQLite 重新查询。错误提示使用安全中文信息和 trace_id，不回显 traceback、SQL、连接字符串或认证数据。
 
-未实现：T008 集成验收、岗位搜索、自动 fingerprint、Match、LLM Agent、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。
+T008 V0.1 集成验收已完成：Profile → Evidence → Job → Application → Event → Dashboard → ServiceBundle 重建读取闭环已通过真实临时 SQLite 验收。
+
+尚未实现 T101 及后续任务，包括岗位搜索、自动 fingerprint、Match、LLM Agent、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。

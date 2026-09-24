@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T008
-- 已完成任务：T001、T002、T003、T004、T005、T006、T007、T008
-- 下一任务：T101
+- 当前稳定任务：T101
+- 已完成任务：T001、T002、T003、T004、T005、T006、T007、T008、T101
+- 下一任务：T102
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -139,6 +139,18 @@
 - 验收 Application Timeline 稳定排序、Dashboard 真实聚合指标，以及关闭并重建 ServiceBundle 后的数据持久化读取。
 - 未修改生产代码、ORM Schema 或 Alembic migration。
 
+### T101：JD Parser Port 与 Fake
+
+已完成：
+
+- 新增 `JDParseRequest`、`JDRequirement`、`ParsedJD`、`JDParserFixture` Pydantic 契约；请求 extra 字段、空白 JD 和非法来源 URL 在构造时由 `ValidationError` 拒绝，校验错误隐藏输入值。
+- `trace_id` 仅保留在输入请求用于调用关联，不进入解析结果或持久化。
+- 新增同步 `JDParser` Protocol 和 `JDParserError`；Fake 未命中使用继承自它的 `FakeJDParserNotConfiguredError`。
+- 新增显式 Fixture 加载函数和 `FakeJDParser`。有 `external_job_id` 时按精确值查找；缺失时按完整原文 UTF-8 字节的 SHA-256 摘要查找。没有模糊或默认回退。
+- Fake 校验 Fixture 的期望原文与输入一致，解析时再次验证原文，并返回新建的 Pydantic 深副本。
+- 新增三份虚构 JSON Fixture：完整中文 JD、字段缺失 JD、硬性/优先条件区分 JD。
+- 新增契约与 Fake 单元测试；未修改 `JobPosting`、Repository、Service、ORM、Schema 或 migration，未增加模型 SDK、网络调用或真实 LLM。
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -151,6 +163,17 @@
 - 领域层不依赖 SQLAlchemy、Alembic、LangGraph、Playwright、Streamlit 或具体 LLM SDK。
 
 ## 最近验证结果
+
+T101 验收结果：
+
+- 契约专项 `tests/unit/application/test_jd_parser_contracts.py`：19 passed
+- Fake 专项 `tests/unit/infrastructure/test_fake_jd_parser.py`：20 passed
+- T101 两个专项合计：39 passed
+- 完整 pytest：172 passed
+- `python -m compileall -q job_agent tests`：通过
+- `python -m job_agent`：通过，输出 `job_agent 已启动: env=development, dry_run=True`
+- `git diff --check`：通过
+- 未修改数据库、Schema 或 migration；未读取 `.env`、API Key 或访问网络
 
 T008 验收结果：
 
@@ -185,7 +208,8 @@ T007 完成时：
 
 ## 当前未实现
 
-- T101 及后续任务
+- T102 及后续任务
+- 真实 LLM JD Parser、模型 SDK 和 Prompt
 - 岗位搜索与匹配
 - LLM Agent
 - LangGraph 业务图
@@ -266,9 +290,21 @@ T007 完成时：
 - `job_agent.ui.types.ServiceBundle`
 - `job_agent.ui.app.render_app`
 
+## T101 新增公共接口
+
+- `job_agent.application.contracts.JDParseRequest`
+- `job_agent.application.contracts.JDRequirement`
+- `job_agent.application.contracts.ParsedJD`
+- `job_agent.application.contracts.JDParserFixture`
+- `job_agent.application.ports.JDParser`
+- `job_agent.application.ports.JDParserError`
+- `job_agent.infrastructure.fakes.FakeJDParser`
+- `job_agent.infrastructure.fakes.FakeJDParserNotConfiguredError`
+- `job_agent.infrastructure.fakes.load_jd_parser_fixture`
+
 ## 下一任务
 
-下一任务是 T101。T008 已确认 Profile、Evidence、Job、Application、Event 和 Dashboard 的 V0.1 本地闭环及 ServiceBundle 重建读取能力；仍未实现自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright、FastAPI 或自动提交。
+下一任务是 T102。T101 已定义中间解析契约、Port 和确定性 Fixture Fake；尚未实现真实 LLM Parser。T008 已确认 Profile、Evidence、Job、Application、Event 和 Dashboard 的 V0.1 本地闭环及 ServiceBundle 重建读取能力；仍未实现自动 fingerprint、岗位搜索、Match、LangGraph、Playwright、FastAPI 或自动提交。
 
 ## 每次任务完成后的更新要求
 

@@ -1,0 +1,36 @@
+{
+  "fixture_id": "hard-preferred-cn",
+  "input": {
+    "raw_jd": "虚构云端公司招聘后端工程师。必须掌握 Go 并熟悉 HTTP 服务开发。具备 Kubernetes 经验者优先，有开源项目经验加分。",
+    "source_url": "https://jobs.example.com/fake/hard-preferred-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": "fixture-hard-preferred-cn"
+  },
+  "expected": {
+    "raw_jd": "虚构云端公司招聘后端工程师。必须掌握 Go 并熟悉 HTTP 服务开发。具备 Kubernetes 经验者优先，有开源项目经验加分。",
+    "source_url": "https://jobs.example.com/fake/hard-preferred-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": "fixture-hard-preferred-cn",
+    "title": "后端工程师",
+    "company": "虚构云端公司",
+    "location": null,
+    "job_type": null,
+    "responsibilities": [],
+    "hard_requirements": [
+      {"text": "必须掌握 Go", "category": "skill"},
+      {"text": "熟悉 HTTP 服务开发", "category": "skill"}
+    ],
+    "preferred_qualifications": [
+      {"text": "具备 Kubernetes 经验", "category": "experience"},
+      {"text": "有开源项目经验", "category": "experience"}
+    ],
+    "skills": ["Go", "HTTP", "Kubernetes"],
+    "education_requirement": null,
+    "experience_requirement": null,
+    "graduation_requirement": null,
+    "languages": [],
+    "deadline": null,
+    "deadline_text": null,
+    "ambiguous_items": []
+  }
+}

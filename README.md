@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001 工程骨架、T002 领域 Schema、T003 数据库持久化基础、T004 Repository 与事务层、T005 Profile Service，以及 T006 Job/Application Service；岗位搜索、自动投递和业务页面仍在后续任务中实现。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T007，包括领域与持久化基础、Profile/Job/Application Service，以及本地单用户 Streamlit 基础 UI；岗位搜索、匹配、自动化投递仍属于后续任务。
 
 ## 环境要求
 
@@ -17,6 +17,8 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
+
+安装命令会同时安装 Streamlit 1.39.x 运行依赖与 pytest 开发依赖。当前约束固定在已通过 Python 3.11、`streamlit.testing.v1` 和现有依赖集合验证的次版本，避免未审核的 UI 测试契约或传递依赖漂移；升级 Streamlit 时应单独执行依赖兼容性与页面回归验证。
 
 复制 `.env.example` 为 `.env` 后按需修改。`.env` 不会被提交到 Git。
 
@@ -35,13 +37,29 @@ job-agent
 启动只会加载并校验配置，不会连接数据库、调用模型或打开浏览器。
 启动入口会显式以 UTF-8 输出中文状态信息，避免 Windows 管道或非 UTF-8 默认代码页破坏文本。
 
+### Streamlit UI
+
+首次运行前可显式准备数据库：
+
+```powershell
+python -c "from job_agent.config import Settings; from job_agent.infrastructure.database import create_engine_from_settings, initialize_database; initialize_database(create_engine_from_settings(Settings.from_env()))"
+```
+
+启动 UI：
+
+```powershell
+python -m streamlit run job_agent/ui/app.py
+```
+
+默认访问地址为 `http://localhost:8501`。UI 启动入口独立于 `python -m job_agent`；只有实际执行 UI 后才会装配 Engine、初始化表并创建 Service。
+
 ## 测试
 
 ```powershell
 python -m pytest -q
 ```
 
-测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository、T005 Profile Service，以及 T006 岗位去重、待投池幂等创建、状态机、事件 Timeline 和事务回滚。
+测试覆盖 T001 smoke test、T002 领域模型、T003 临时 SQLite 数据库与迁移、T004 Repository、T005/T006 Service，以及 T007 ViewModel、Dashboard 聚合、刷新持久化和 Streamlit AppTest 关键交互。
 
 ## 数据库
 
@@ -86,4 +104,16 @@ Service 不依赖 SQLAlchemy、ORM 或 Session，也不自行提交事务；SQLA
 
 应用服务只依赖 Repository Protocol 和 `JobApplicationUnitOfWork`，不导入 SQLAlchemy、Session 或 ORM，也不自行提交或回滚。查询返回领域对象或 `Page[T]`；Application Timeline 按 `occurred_at`、`id` 稳定升序返回。
 
-未实现：T007 Streamlit 基础 UI、岗位搜索、LLM Agent、LangGraph 业务图、Playwright 自动化和自动提交。
+## Streamlit 基础 UI
+
+UI 提供五个页面：
+
+- Dashboard：展示数据库聚合得到的本周岗位、Evidence、投递状态、最近事件和未来 14 天截止岗位。
+- 个人资料：创建、查询、编辑、Pydantic 校验和保存前预览；邮箱、手机号默认掩码并独立编辑，编辑时留空表示保留原值，当前不支持清空。
+- 证据库：查看审核数据、按状态筛选、使用 VERIFIED 正式查询并显式验证 Evidence。
+- 岗位录入：手动录入结构化 JobPosting、按 fingerprint 去重，并幂等加入待投池。
+- 投递记录：查看 Application、合法状态选项和稳定排序的 Event Timeline。
+
+页面只调用应用 Service；Session State 只保存导航、表单草稿、预览确认标记和操作状态，不保存 Profile 等业务对象。业务事实始终从 SQLite 重新查询。错误提示使用安全中文信息和 trace_id，不回显 traceback、SQL、连接字符串或认证数据。
+
+未实现：T008 集成验收、岗位搜索、自动 fingerprint、Match、LLM Agent、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。

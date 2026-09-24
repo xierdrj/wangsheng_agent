@@ -63,6 +63,23 @@ class SqlAlchemyResumeEvidenceRepository(
             offset=offset,
         )
 
+    def list_by_candidate_and_verification(
+        self,
+        candidate_id: str,
+        verification: EvidenceVerification,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Page[ResumeEvidence]:
+        """按指定核验状态在数据库分页前筛选审核数据。"""
+
+        return self._list_by_candidate(
+            candidate_id,
+            verification=verification,
+            limit=limit,
+            offset=offset,
+        )
+
     def _list_by_candidate(
         self,
         candidate_id: str,

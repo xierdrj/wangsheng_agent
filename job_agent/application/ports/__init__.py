@@ -1,5 +1,6 @@
 """应用层端口。"""
 
+from job_agent.application.ports.dashboard import DashboardReader
 from job_agent.application.ports.repositories import (
     ApplicationRepository,
     CandidateRepository,
@@ -24,6 +25,7 @@ from job_agent.application.ports.unit_of_work import (
 __all__ = [
     "ApplicationRepository",
     "CandidateRepository",
+    "DashboardReader",
     "DuplicateEntityError",
     "EntityNotFoundError",
     "InvalidPaginationError",

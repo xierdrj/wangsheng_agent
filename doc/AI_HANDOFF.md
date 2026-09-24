@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T006
-- 已完成任务：T001、T002、T003、T004、T005、T006
-- 下一任务：T007
+- 当前稳定任务：T007
+- 已完成任务：T001、T002、T003、T004、T005、T006、T007
+- 下一任务：T008
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -109,6 +109,24 @@
 - Application/Event 创建及状态/Event 更新具有原子性，Event 失败时整体回滚
 - 未修改 Schema 或 migration，未实现 T007
 
+### T007：Streamlit 基础 UI
+
+已完成：
+
+- Streamlit 1.39.x 运行依赖和独立 `job_agent/ui/app.py` 入口
+- Dashboard、个人资料、证据库、岗位录入、投递记录与 Timeline 五个页面
+- UI 页面只依赖应用 Service/查询 Service，不直接导入 SQLAlchemy、ORM、Session 或 Repository 实现
+- `DashboardQueryService`、只读查询端口和 SQLAlchemy 聚合适配器，统计在数据库完成
+- Profile 创建、查询、编辑、保存前预览、严格 JSON/Pydantic 嵌套结构校验
+- 手机号/邮箱默认掩码并独立编辑，预览状态不缓存 Profile 业务对象，敏感 Profile 标识、认证 URL 与错误信息脱敏
+- Evidence 审核查询、数据库级状态筛选、VERIFIED 正式查询和显式验证
+- JobPosting 手动录入、fingerprint upsert、稳定 application ID 的幂等待投池操作
+- Application 列表、详情、复用 T006 规则的合法状态更新和 Timeline
+- Streamlit Session State 仅保存导航、表单草稿、预览确认标记和操作状态，不保存 Profile 等业务对象
+- UI 模块导入不创建 Engine、数据库文件、表或服务器
+- 临时 SQLite 验证 Service bundle 重建后数据仍可读取
+- 未修改 Schema 或 migration，未实现 T008
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -122,9 +140,12 @@
 
 ## 最近验证结果
 
-T006 完成时：
+T007 完成时：
 
-- 完整 pytest：92 passed
+- 完整 pytest：132 passed
+- T007 ViewModel/规则单元测试：31 passed
+- T007 Dashboard 与刷新持久化集成测试：6 passed
+- T007 Streamlit AppTest：3 passed
 - T006 状态规则与 Job/Application Service 专项：44 passed
 - T006 Job/Application Service 集成测试：11 passed
 - T006 状态规则单元测试：33 passed
@@ -140,12 +161,12 @@ T006 完成时：
 
 ## 当前未实现
 
-- T007 Streamlit 基础 UI
+- T008 V0.1 集成验收
 - 岗位搜索与匹配
 - LLM Agent
 - LangGraph 业务图
 - Playwright 自动化
-- Streamlit 业务界面
+- 自动 fingerprint、JD Parser 和自动提交
 
 ## 当前风险和约束
 
@@ -163,6 +184,10 @@ T006 完成时：
 10. T005 文档称 EvidenceVerification 只有 UNVERIFIED/VERIFIED，但 T002 公开枚举和领域文档还包含 REJECTED；当前保留 T002 契约，REJECTED 不进入正式查询，也不能被 Profile Service 自动验证。
 11. T006 不提供终止状态恢复接口；`REJECTED`、`WITHDRAWN`、`CLOSED` 不能通过普通状态接口恢复，后续若需要必须增加带人工来源和原因的独立接口。
 12. T006 依赖调用方提供稳定、非空的 Job fingerprint，不包含自动 fingerprint、JD 解析或岗位搜索。
+13. T007 是本地单用户 UI，candidate_id 由侧边栏显式选择，不包含登录态或多租户隔离。
+14. Profile 的教育、实习和项目列表使用严格 JSON/Pydantic 编辑；尚未提供更复杂的逐行可视化编辑器。
+15. Dashboard 的即将截止窗口固定为未来 14 天；“高匹配岗位”因 Match 尚未实现而不展示伪造数据。
+16. Streamlit 暂固定为 1.39.x：该次版本已通过 Python 3.11、AppTest 和当前共享环境依赖检查；升级应单独验证 UI 契约与传递依赖。
 
 ## T003 新增公共接口
 
@@ -205,9 +230,21 @@ T006 完成时：
 - `ApplicationRepository.get_by_candidate_and_job`
 - `ApplicationRepository.list_by_candidate`
 
+## T007 新增公共接口
+
+- `job_agent.application.contracts.DashboardSummary`
+- `job_agent.application.ports.DashboardReader`
+- `job_agent.application.services.DashboardQueryService`
+- `job_agent.infrastructure.database.SqlAlchemyDashboardReader`
+- `ProfileService.list_evidence_by_verification`
+- `ResumeEvidenceRepository.list_by_candidate_and_verification`
+- `job_agent.ui.bootstrap.create_service_bundle`
+- `job_agent.ui.types.ServiceBundle`
+- `job_agent.ui.app.render_app`
+
 ## 下一任务
 
-下一任务是 T007 Streamlit 基础 UI。T006 只实现手动结构化岗位保存、待投池、Application 状态与事件业务边界，未实现 UI、自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright 或自动提交。
+下一任务是 T008 V0.1 集成验收。T007 已形成 Profile、Evidence、Job 和 Application 的本地 UI 数据管理闭环，但未实现自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright、FastAPI 或自动提交。
 
 ## 每次任务完成后的更新要求
 

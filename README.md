@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T008，包括领域与持久化基础、Profile/Job/Application Service、本地单用户 Streamlit 基础 UI，以及 V0.1 全流程集成验收；岗位搜索、匹配、自动化投递仍属于后续任务。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T008 和 T101，包括领域与持久化基础、Profile/Job/Application Service、本地单用户 Streamlit 基础 UI、V0.1 全流程集成验收，以及 JD Parser Port/Fake 契约；岗位搜索、匹配、自动化投递和真实 LLM Parser 仍属于后续任务。
 
 ## 环境要求
 
@@ -110,6 +110,19 @@ Service 不依赖 SQLAlchemy、ORM 或 Session，也不自行提交事务；SQLA
 
 应用服务只依赖 Repository Protocol 和 `JobApplicationUnitOfWork`，不导入 SQLAlchemy、Session 或 ORM，也不自行提交或回滚。查询返回领域对象或 `Page[T]`；Application Timeline 按 `occurred_at`、`id` 稳定升序返回。
 
+## JD Parser Port 与 Fake
+
+T101 已提供 Pydantic `JDParseRequest`、`JDRequirement`、`ParsedJD` 和 `JDParserFixture` 契约，以及同步 `JDParser` Port 和确定性 `FakeJDParser`。Fake 只根据 Fixture 的 `external_job_id` 精确值或完整原文 UTF-8 SHA-256 精确匹配，不调用真实模型或网络；未命中时明确失败。解析结果是中间契约，不会自动保存为 `JobPosting`。
+
+运行相关测试：
+
+```powershell
+python -m pytest tests\unit\application\test_jd_parser_contracts.py -q
+python -m pytest tests\unit\infrastructure\test_fake_jd_parser.py -q
+```
+
+T102 的真实 LLM Parser、模型 SDK、Prompt 和 API Key 接入尚未实现。
+
 ## Streamlit 基础 UI
 
 UI 提供五个页面：
@@ -124,4 +137,4 @@ UI 提供五个页面：
 
 T008 V0.1 集成验收已完成：Profile → Evidence → Job → Application → Event → Dashboard → ServiceBundle 重建读取闭环已通过真实临时 SQLite 验收。
 
-尚未实现 T101 及后续任务，包括岗位搜索、自动 fingerprint、Match、LLM Agent、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。
+尚未实现 T102 及后续任务，包括真实 LLM Parser、岗位搜索、自动 fingerprint、Match、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。

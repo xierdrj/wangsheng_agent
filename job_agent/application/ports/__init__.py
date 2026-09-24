@@ -1,6 +1,7 @@
 """应用层端口。"""
 
 from job_agent.application.ports.dashboard import DashboardReader
+from job_agent.application.ports.jd_parser import JDParser, JDParserError
 from job_agent.application.ports.repositories import (
     ApplicationRepository,
     CandidateRepository,
@@ -31,6 +32,8 @@ __all__ = [
     "InvalidPaginationError",
     "ImmutableFieldError",
     "JobApplicationUnitOfWork",
+    "JDParser",
+    "JDParserError",
     "JobRepository",
     "MatchRepository",
     "Page",

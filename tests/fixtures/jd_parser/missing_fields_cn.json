@@ -1,0 +1,32 @@
+{
+  "fixture_id": "missing-fields-cn",
+  "input": {
+    "raw_jd": "招聘数据分析实习生。负责整理合成实验数据并制作周报。要求熟悉 SQL。",
+    "source_url": "https://jobs.example.com/fake/missing-fields-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": null
+  },
+  "expected": {
+    "raw_jd": "招聘数据分析实习生。负责整理合成实验数据并制作周报。要求熟悉 SQL。",
+    "source_url": "https://jobs.example.com/fake/missing-fields-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": null,
+    "title": "数据分析实习生",
+    "company": null,
+    "location": null,
+    "job_type": "实习",
+    "responsibilities": ["整理实验数据", "制作周报"],
+    "hard_requirements": [
+      {"text": "熟悉 SQL", "category": "skill"}
+    ],
+    "preferred_qualifications": [],
+    "skills": ["SQL"],
+    "education_requirement": null,
+    "experience_requirement": null,
+    "graduation_requirement": null,
+    "languages": [],
+    "deadline": null,
+    "deadline_text": null,
+    "ambiguous_items": ["原文未提供公司名称、工作地点和截止日期"]
+  }
+}

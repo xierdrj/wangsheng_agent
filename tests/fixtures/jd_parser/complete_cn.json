@@ -1,0 +1,35 @@
+{
+  "fixture_id": "complete-cn",
+  "input": {
+    "raw_jd": "虚构科技有限公司招聘算法工程师，工作地点杭州。负责推荐模型训练、评估和线上效果分析。要求：熟练使用 Python，具有机器学习项目经验，本科及以上学历，英语可用于技术文档阅读。",
+    "source_url": "https://jobs.example.com/fake/complete-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": "fixture-complete-cn"
+  },
+  "expected": {
+    "raw_jd": "虚构科技有限公司招聘算法工程师，工作地点杭州。负责推荐模型训练、评估和线上效果分析。要求：熟练使用 Python，具有机器学习项目经验，本科及以上学历，英语可用于技术文档阅读。",
+    "source_url": "https://jobs.example.com/fake/complete-cn",
+    "source_name": "synthetic-fixture",
+    "external_job_id": "fixture-complete-cn",
+    "title": "算法工程师",
+    "company": "虚构科技有限公司",
+    "location": "杭州",
+    "job_type": "全职",
+    "responsibilities": ["推荐模型训练", "模型评估", "线上效果分析"],
+    "hard_requirements": [
+      {"text": "熟练使用 Python", "category": "skill"},
+      {"text": "具有机器学习项目经验", "category": "experience"},
+      {"text": "本科及以上学历", "category": "education"},
+      {"text": "英语可用于技术文档阅读", "category": "language"}
+    ],
+    "preferred_qualifications": [],
+    "skills": ["Python", "机器学习"],
+    "education_requirement": "本科及以上",
+    "experience_requirement": "具有机器学习项目经验",
+    "graduation_requirement": null,
+    "languages": ["英语：可阅读技术文档"],
+    "deadline": null,
+    "deadline_text": null,
+    "ambiguous_items": []
+  }
+}

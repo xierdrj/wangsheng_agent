@@ -5,6 +5,12 @@ from job_agent.application.contracts.application import (
     ApplicationTransitionRequest,
 )
 from job_agent.application.contracts.dashboard import DashboardSummary
+from job_agent.application.contracts.jd_parser import (
+    JDParseRequest,
+    JDParserFixture,
+    JDRequirement,
+    ParsedJD,
+)
 from job_agent.application.contracts.profile import (
     ProfileImportRequest,
     ProfileImportResult,
@@ -15,7 +21,11 @@ __all__ = [
     "AddToApplicationPoolRequest",
     "ApplicationTransitionRequest",
     "DashboardSummary",
+    "JDParseRequest",
+    "JDParserFixture",
+    "JDRequirement",
     "ProfileImportRequest",
     "ProfileImportResult",
+    "ParsedJD",
     "ResumeRecord",
 ]

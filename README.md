@@ -1,6 +1,6 @@
 # 秋招投递智能体
 
-这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T008 和 T101，包括领域与持久化基础、Profile/Job/Application Service、本地单用户 Streamlit 基础 UI、V0.1 全流程集成验收，以及 JD Parser Port/Fake 契约；岗位搜索、匹配、自动化投递和真实 LLM Parser 仍属于后续任务。
+这是一个本地运行、由用户保持最终控制权的秋招工作流系统。当前已完成 T001～T008、T101 和 T102，包括领域与持久化基础、Profile/Job/Application Service、本地单用户 Streamlit 基础 UI、V0.1 全流程集成验收，以及 JD Parser 的 Fake 与 OpenAI-compatible 真实适配器；岗位搜索、匹配、自动化投递仍属于后续任务。
 
 ## 环境要求
 
@@ -18,7 +18,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-安装命令会同时安装 Streamlit 1.39.x 运行依赖与 pytest 开发依赖。当前约束固定在已通过 Python 3.11、`streamlit.testing.v1` 和现有依赖集合验证的次版本，避免未审核的 UI 测试契约或传递依赖漂移；升级 Streamlit 时应单独执行依赖兼容性与页面回归验证。
+安装命令会同时安装 Streamlit 1.39.x、直接依赖的 `httpx` 和 pytest 开发依赖。当前约束固定在已通过 Python 3.11、`streamlit.testing.v1` 和现有依赖集合验证的次版本，避免未审核的 UI 测试契约或传递依赖漂移；升级依赖时应单独执行兼容性与页面回归验证。
 
 复制 `.env.example` 为 `.env` 后按需修改。`.env` 不会被提交到 Git。
 
@@ -59,6 +59,16 @@ python -m streamlit run job_agent/ui/app.py
 python -m pytest -q
 ```
 
+T102 的默认 Provider 是 Fake，普通测试完全离线。真实 OpenAI-compatible Parser 只有在同时设置 `LLM_ENABLED=true`、`LLM_PROVIDER=openai_compatible`、非 `unset` 的 `LLM_MODEL`、`LLM_API_KEY` 和显式 `LLM_BASE_URL` 后才会在 `parse()` 时请求；Base URL 只填写 API 根地址，适配器会追加一次 `/chat/completions`。请求只发送原始 JD，不发送 Profile、Evidence、来源元数据或 trace_id，解析结果不会自动保存 JobPosting。
+
+T102 离线专项测试：
+
+```powershell
+python -m pytest tests\unit\infrastructure\test_openai_compatible_jd_parser.py tests\unit\infrastructure\test_jd_parser_prompt.py -q
+```
+
+真实 smoke test 不属于普通 pytest，也不应把密钥写入仓库、命令行、日志或测试输出；应在本机临时设置全部配置后单独运行。默认配置和 `python -m job_agent` 不会连接 Provider。
+
 V0.1 端到端验收可单独运行：
 
 ```powershell
@@ -88,7 +98,7 @@ alembic downgrade base
 
 ## 当前范围
 
-已完成：工程目录、`pyproject.toml`、配置对象、`.env.example`、`.gitignore`、最小启动入口、领域枚举、Pydantic Schema、SQLAlchemy ORM、数据库初始化、Alembic 初始迁移、Repository 接口/实现和单元/集成测试。
+已完成：工程目录、`pyproject.toml`、配置对象、`.env.example`、`.gitignore`、最小启动入口、领域枚举、Pydantic Schema、SQLAlchemy ORM、数据库初始化、Alembic 初始迁移、Repository 接口/实现和单元/集成测试；T102 新增严格的 Provider 输出 Schema、`jd-parser-v1` Prompt 和同步 httpx 适配器。
 
 Repository 通过显式接收共享 `Session` 工作，不自行 `commit`；由外层 `session_scope` 统一提交或回滚。接口返回领域模型和 `Page[T]`，SQLAlchemy 异常会转换为项目级 Repository 异常并保留异常链。支持的业务唯一键 upsert 为：Job `fingerprint`、Resume `candidate_id + content_hash`、Match `candidate_id + job_id`、Application `candidate_id + job_id`。分页默认按时间字段和 `id` 升序稳定排序，`limit` 范围为 1～100。
 
@@ -121,7 +131,7 @@ python -m pytest tests\unit\application\test_jd_parser_contracts.py -q
 python -m pytest tests\unit\infrastructure\test_fake_jd_parser.py -q
 ```
 
-T102 的真实 LLM Parser、模型 SDK、Prompt 和 API Key 接入尚未实现。
+T102 真实适配器只支持 OpenAI-compatible Chat Completions，不使用供应商 SDK；支持严格 JSON Schema、30,000 字符输入上限、1 MiB 响应上限、超时/网络/429/408/指定 5xx 的最多三次固定退避重试，以及安全项目异常和脱敏日志。适配器不持久化解析结果，不替换默认 Fake。
 
 ## Streamlit 基础 UI
 
@@ -137,4 +147,4 @@ UI 提供五个页面：
 
 T008 V0.1 集成验收已完成：Profile → Evidence → Job → Application → Event → Dashboard → ServiceBundle 重建读取闭环已通过真实临时 SQLite 验收。
 
-尚未实现 T102 及后续任务，包括真实 LLM Parser、岗位搜索、自动 fingerprint、Match、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。
+尚未实现后续任务，包括岗位搜索、自动 fingerprint、Match、LangGraph、Playwright、自动提交、登录/设置页和 FastAPI。

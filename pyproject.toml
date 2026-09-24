@@ -12,6 +12,7 @@ dependencies = [
     "pydantic[email]>=2.7,<3.0",
     "SQLAlchemy>=2.0,<3.0",
     "alembic>=1.13,<2.0",
+    "httpx>=0.27,<1.0",
     # 固定已在 Python 3.11 与当前 AppTest 契约验证的次版本，避免 UI 行为漂移。
     "streamlit>=1.39,<1.40",
 ]

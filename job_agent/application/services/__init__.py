@@ -8,6 +8,7 @@ from job_agent.application.services.application import (
     InvalidApplicationTransitionError,
 )
 from job_agent.application.services.job import JobService
+from job_agent.application.services.dashboard import DashboardQueryService
 from job_agent.application.services.profile import EvidenceStateError, ProfileService
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
     "STATUS_CHANGED",
     "ApplicationConflictError",
     "ApplicationService",
+    "DashboardQueryService",
     "EvidenceStateError",
     "InvalidApplicationTransitionError",
     "JobService",

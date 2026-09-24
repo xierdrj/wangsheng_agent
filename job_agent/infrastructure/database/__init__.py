@@ -13,12 +13,14 @@ from job_agent.infrastructure.database.unit_of_work import (
     SqlAlchemyJobApplicationUnitOfWork,
     SqlAlchemyProfileUnitOfWork,
 )
+from job_agent.infrastructure.database.dashboard import SqlAlchemyDashboardReader
 
 __all__ = [
     "Base",
     "DatabaseConfigurationError",
     "SqlAlchemyJobApplicationUnitOfWork",
     "SqlAlchemyProfileUnitOfWork",
+    "SqlAlchemyDashboardReader",
     "create_engine_from_settings",
     "create_engine_from_url",
     "create_session_factory",

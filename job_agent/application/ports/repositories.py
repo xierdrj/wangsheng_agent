@@ -15,6 +15,7 @@ from job_agent.domain.schemas import (
     ResumeEvidence,
     ResumeVersion,
 )
+from job_agent.domain.enums import EvidenceVerification
 from job_agent.application.contracts import ResumeRecord
 
 
@@ -68,6 +69,14 @@ class ResumeEvidenceRepository(Protocol):
     ) -> Page[ResumeEvidence]: ...
     def list_verified_by_candidate(
         self, candidate_id: str, *, limit: int = 50, offset: int = 0
+    ) -> Page[ResumeEvidence]: ...
+    def list_by_candidate_and_verification(
+        self,
+        candidate_id: str,
+        verification: EvidenceVerification,
+        *,
+        limit: int = 50,
+        offset: int = 0,
     ) -> Page[ResumeEvidence]: ...
     def update(self, entity: ResumeEvidence) -> ResumeEvidence: ...
     def delete(self, entity_id: str) -> bool: ...

@@ -145,6 +145,24 @@ class ProfileService:
                 candidate_id, limit=limit, offset=offset
             )
 
+    def list_evidence_by_verification(
+        self,
+        candidate_id: str,
+        verification: EvidenceVerification,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Page[ResumeEvidence]:
+        """按核验状态执行数据库级审核查询。"""
+
+        with self._unit_of_work_factory() as unit_of_work:
+            return unit_of_work.evidence.list_by_candidate_and_verification(
+                candidate_id,
+                verification,
+                limit=limit,
+                offset=offset,
+            )
+
     def _new_evidence(self, evidence: ResumeEvidence, now: datetime) -> ResumeEvidence:
         return evidence.model_copy(
             update={

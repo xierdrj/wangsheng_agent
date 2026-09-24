@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
+from urllib.parse import urlparse
 
 
 class ConfigurationError(ValueError):
@@ -57,6 +58,25 @@ def _as_positive_int(value: str, key: str) -> int:
     return parsed
 
 
+def _validate_llm_base_url(value: str) -> None:
+    """校验兼容接口根地址，不回显可能含敏感信息的原始值。"""
+
+    try:
+        parsed = urlparse(value)
+        hostname = parsed.hostname
+    except ValueError as exc:
+        raise ConfigurationError("配置 LLM_BASE_URL 必须是绝对 HTTP(S) 地址") from exc
+    if parsed.scheme not in {"http", "https"} or not hostname:
+        raise ConfigurationError("配置 LLM_BASE_URL 必须是绝对 HTTP(S) 地址")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ConfigurationError("配置 LLM_BASE_URL 不得包含用户信息、查询参数或片段")
+    path = parsed.path.rstrip("/")
+    if "//" in path:
+        raise ConfigurationError("配置 LLM_BASE_URL 路径不得包含双斜线")
+    if "chat/completions" in path.casefold():
+        raise ConfigurationError("配置 LLM_BASE_URL 必须是 API 根地址")
+
+
 @dataclass(frozen=True)
 class Settings:
     """应用运行配置，值来源优先级为进程环境变量、``.env``、安全默认值。"""
@@ -65,7 +85,7 @@ class Settings:
     database_url: str = "sqlite:///./data/job_agent.db"
     llm_provider: str = "fake"
     llm_model: str = "unset"
-    llm_api_key: str | None = None
+    llm_api_key: str | None = field(default=None, repr=False)
     data_dir: Path = Path("data")
     snapshot_dir: Path = Path("data/snapshots")
     playwright_auth_dir: Path = Path("data/playwright")
@@ -73,6 +93,8 @@ class Settings:
     browser_dry_run: bool = True
     log_level: str = "INFO"
     max_daily_submissions: int = 10
+    llm_enabled: bool = False
+    llm_base_url: str | None = None
 
     @classmethod
     def from_env(
@@ -89,18 +111,34 @@ class Settings:
             return process_env.get(key, file_values.get(key, default))
 
         provider = (get("LLM_PROVIDER", "fake") or "fake").strip()
+        enabled = _as_bool(get("LLM_ENABLED", "false") or "false", "LLM_ENABLED")
         api_key = (get("LLM_API_KEY") or "").strip() or None
         if provider != "fake" and not api_key:
             raise ConfigurationError(
-                f"配置 LLM_API_KEY 缺失：LLM_PROVIDER={provider!r} 时必须提供 API 密钥"
+                "配置 LLM_API_KEY 缺失：非 Fake Provider 必须提供 API 密钥"
             )
+
+        supported_providers = {"fake", "openai_compatible"}
+        if provider not in supported_providers:
+            raise ConfigurationError("配置 LLM_PROVIDER 不受支持")
+
+        model = (get("LLM_MODEL", "unset") or "unset").strip()
+        base_url = (get("LLM_BASE_URL") or "").strip() or None
+        if enabled and provider == "openai_compatible":
+            if not model or model.casefold() == "unset":
+                raise ConfigurationError("配置 LLM_MODEL 缺失")
+            if base_url is None:
+                raise ConfigurationError("配置 LLM_BASE_URL 缺失")
+            _validate_llm_base_url(base_url)
 
         return cls(
             app_env=(get("APP_ENV", "development") or "development").strip(),
             database_url=(get("DATABASE_URL", cls.database_url) or cls.database_url).strip(),
+            llm_enabled=enabled,
             llm_provider=provider,
-            llm_model=(get("LLM_MODEL", "unset") or "unset").strip(),
+            llm_model=model,
             llm_api_key=api_key,
+            llm_base_url=base_url,
             data_dir=Path(get("DATA_DIR", "./data") or "./data"),
             snapshot_dir=Path(get("SNAPSHOT_DIR", "./data/snapshots") or "./data/snapshots"),
             playwright_auth_dir=Path(
@@ -119,4 +157,3 @@ class Settings:
 
         for directory in (self.data_dir, self.snapshot_dir, self.playwright_auth_dir):
             directory.mkdir(parents=True, exist_ok=True)
-

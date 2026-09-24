@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T101
-- 已完成任务：T001、T002、T003、T004、T005、T006、T007、T008、T101
-- 下一任务：T102
+- 当前稳定任务：T102
+- 已完成任务：T001、T002、T003、T004、T005、T006、T007、T008、T101、T102
+- 下一任务：T103
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -150,6 +150,23 @@
 - Fake 校验 Fixture 的期望原文与输入一致，解析时再次验证原文，并返回新建的 Pydantic 深副本。
 - 新增三份虚构 JSON Fixture：完整中文 JD、字段缺失 JD、硬性/优先条件区分 JD。
 - 新增契约与 Fake 单元测试；未修改 `JobPosting`、Repository、Service、ORM、Schema 或 migration，未增加模型 SDK、网络调用或真实 LLM。
+
+### T102：OpenAI-compatible JD Parser
+
+已完成：
+
+- `Settings` 增加 `LLM_ENABLED`、`LLM_BASE_URL`，默认 `false`/`fake`/`unset`/空地址；API Key 在 dataclass repr 中隐藏。
+- 新增 `job_agent.infrastructure.llm.OpenAICompatibleJDParser`，实现既有同步 `JDParser` Port；只使用直接依赖 `httpx`，不引入供应商 SDK。
+- 新增严格 `JDParserModelOutput` Provider Schema，拒绝 extra、缺字段、类型错误、`unknown` 和无时区 deadline；可信的原文与来源元数据由请求重新注入，`trace_id` 不进模型。
+- 新增固定 `jd-parser` / `jd-parser-v1` Prompt，原始 JD 通过 JSON user 数据消息隔离 Prompt Injection；只发送 raw JD。
+- 请求仅使用 `response_format.type=json_schema`，认证只在 Bearer Header；输入最多 30,000 个 Python 字符，解压后响应最多 1 MiB。
+- 超时、网络、408、429、500/502/503/504 最多三次请求，固定 0.5/1.0 秒退避；其他 4xx/5xx、响应结构错误和 Schema 错误不重试。
+- 支持注入 httpx Client、Transport、sleep 和 logger；内部 Client 惰性创建并由 `close()`/context manager 释放，外部 Client 不由 Parser 关闭；导入阶段无网络、文件或数据库副作用。
+- 新增离线 Prompt/Provider 测试；T101 契约/Fake 保持不变。未新增 live smoke，真实请求需由用户显式配置后单独执行。
+
+T102 验证结果（2026-09-24）：指定 Python 3.11 环境专项测试通过，完整回归 `179 passed`，`compileall`、CLI 和 `git diff --check` 通过；`pip check` 报告环境中已有的 langgraph/protobuf/click/psutil/typing-extensions 版本冲突，未发现由本次 `httpx` 声明引入的冲突。未执行真实 LLM smoke，请勿将其视为通过。
+
+T102 遗留限制：适配器不保存响应、不自动写入 JobPosting，不实现 Provider 自动路由、Prompt 修复调用、岗位搜索、匹配或并发队列；默认 Fake 与启动路径保持离线。
 
 ## 当前领域层规则
 
@@ -304,7 +321,7 @@ T007 完成时：
 
 ## 下一任务
 
-下一任务是 T102。T101 已定义中间解析契约、Port 和确定性 Fixture Fake；尚未实现真实 LLM Parser。T008 已确认 Profile、Evidence、Job、Application、Event 和 Dashboard 的 V0.1 本地闭环及 ServiceBundle 重建读取能力；仍未实现自动 fingerprint、岗位搜索、Match、LangGraph、Playwright、FastAPI 或自动提交。
+下一任务是 T103。T102 已实现 OpenAI-compatible 同步 JD Parser，但不保存解析结果。T008 已确认 Profile、Evidence、Job、Application、Event 和 Dashboard 的 V0.1 本地闭环及 ServiceBundle 重建读取能力；仍未实现自动 fingerprint、岗位搜索、Match、LangGraph、Playwright、FastAPI 或自动提交。
 
 ## 每次任务完成后的更新要求
 

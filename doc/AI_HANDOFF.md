@@ -5,9 +5,9 @@
 - 仓库名称：wangsheng_agent
 - Python 包名称：job_agent
 - Python 要求：3.11+
-- 当前稳定任务：T007
-- 已完成任务：T001、T002、T003、T004、T005、T006、T007
-- 下一任务：T008
+- 当前稳定任务：T008
+- 已完成任务：T001、T002、T003、T004、T005、T006、T007、T008
+- 下一任务：T101
 - 默认开发数据库：SQLite
 
 ## 当前实现状态
@@ -127,6 +127,18 @@
 - 临时 SQLite 验证 Service bundle 重建后数据仍可读取
 - 未修改 Schema 或 migration，未实现 T008
 
+### T008：V0.1 全流程集成验收
+
+已完成：
+
+- 新增 `tests/e2e/__init__.py` 与 `tests/e2e/test_v01_workflow.py`，使用真实 Service、Repository、Unit of Work、Dashboard Reader 和临时 SQLite。
+- 验收 Candidate Profile 创建与重建读取。
+- 验收 Evidence 初始为 `UNVERIFIED`，显式验证后通过 `list_verified_evidence` 读取 `VERIFIED`。
+- 验收结构化 Job 保存、相同 fingerprint 去重，以及保留既有岗位 ID、fingerprint 和 discovered_at。
+- 验收加入待投池创建 `SHORTLISTED` Application、唯一 `APPLICATION_CREATED` Event、合法状态推进到 `PREPARING` 和 `READY_TO_APPLY`，以及对应 `STATUS_CHANGED` Event。
+- 验收 Application Timeline 稳定排序、Dashboard 真实聚合指标，以及关闭并重建 ServiceBundle 后的数据持久化读取。
+- 未修改生产代码、ORM Schema 或 Alembic migration。
+
 ## 当前领域层规则
 
 - 所有领域模型使用 Pydantic。
@@ -139,6 +151,18 @@
 - 领域层不依赖 SQLAlchemy、Alembic、LangGraph、Playwright、Streamlit 或具体 LLM SDK。
 
 ## 最近验证结果
+
+T008 验收结果：
+
+- `tests/e2e/test_v01_workflow.py`：1 passed
+- T005～T007 指定回归：28 passed
+- 完整 pytest：133 passed
+- `python -m compileall -q job_agent tests`：通过
+- `python -m job_agent`：通过，输出 `job_agent 已启动: env=development, dry_run=True`
+- Streamlit 真实启动健康检查：HTTP 200，响应体为 `ok`
+- Streamlit 子进程已终止，测试端口已释放
+- 临时 SQLite 数据库和日志已清理，未生成 `data/job_agent.db`
+- 未发现生产代码缺陷或超出 T008 范围的实现
 
 T007 完成时：
 
@@ -161,7 +185,7 @@ T007 完成时：
 
 ## 当前未实现
 
-- T008 V0.1 集成验收
+- T101 及后续任务
 - 岗位搜索与匹配
 - LLM Agent
 - LangGraph 业务图
@@ -244,7 +268,7 @@ T007 完成时：
 
 ## 下一任务
 
-下一任务是 T008 V0.1 集成验收。T007 已形成 Profile、Evidence、Job 和 Application 的本地 UI 数据管理闭环，但未实现自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright、FastAPI 或自动提交。
+下一任务是 T101。T008 已确认 Profile、Evidence、Job、Application、Event 和 Dashboard 的 V0.1 本地闭环及 ServiceBundle 重建读取能力；仍未实现自动 fingerprint、JD 解析、岗位搜索、Match、LLM、LangGraph、Playwright、FastAPI 或自动提交。
 
 ## 每次任务完成后的更新要求
 
